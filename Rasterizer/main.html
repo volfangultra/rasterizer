@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rasterizer</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.css">
+    <style>
+        canvas {
+            border: 2px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center m-3">
+        <h1 class="text-center">Rasterizer</h1>
+    </div>
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-7">
+            <canvas id="canvas" width="800" height="800" class="w-100"></canvas>
+        </div>
+            <div class="form-group">
+                <label for="range_toggle">Broj Refleksija:</label>
+                <input type="range" class="form-control-range custom-range" id="num_reflections" min="0" max="4" step="1" value='0'>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.js"></script>
+<script src="help.js"></script>
+<script src="klase.js"></script>
+<script src="rasterizer.js"></script>
+<script src="test.js"></script>
+
+</body>
+</html>
