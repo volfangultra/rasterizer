@@ -1,70 +1,121 @@
-class Point{
-    constructor(x,y,color){
-        this.x = x
-        this.y = y
-        this.color = color
-    }
-    draw(){
-        put_pixel(this.x | 0, this.y | 0, this.color)
-    }
+function Color(r, g, b) {
+    return {
+      r, g, b,
+      mul: function(n) { return new Color(this.r*n, this.g*n, this.b*n); },
+    };
+  }
 
+function Pt(x, y, h) {
+    return {x, y, h};
+  }
+
+
+function Vertex(x, y, z) {
+    return {
+      x, y, z,
+      add: function(v) { return new Vertex(this.x + v.x, this.y + v.y, this.z + v.z); },
+      sub: function(v) { return new Vertex(this.x - v.x, this.y - v.y, this.z - v.z); },
+      mul: function(n) { return new Vertex(this.x*n, this.y*n, this.z*n); },
+      dot: function(vec) { return this.x*vec.x + this.y*vec.y + this.z*vec.z; },
+      length: function() { return Math.sqrt(this.dot(this)); },
+    }
 }
 
-class Line {
-    constructor(P0, P1, color){
-        this.start = P0
-        this.end = P1
-        this.dx = this.end.x - this.start.x
-        this.dy = this.end.y - this.start.y
-        if(Math.abs(this.dx) > Math.abs(this.dy)){
-            if(P0.x > P1.x){
-                this.start = P1
-                this.end = P0
-            }
-            this.x_dependent = false
-        }else {
-            if (P0.y > P1.y){
-                this.start = P1
-                this.end = P0
-            }
-            this.x_dependent = true
-        }
-        this.dx = this.end.x - this.start.x
-        this.dy = this.end.y - this.start.y
-        this.color = color
+
+function Vertex4(arg1, y, z, w) {
+    if (y == undefined) {
+        this.x = arg1.x;
+        this.y = arg1.y;
+        this.z = arg1.z;
+        this.w = arg1.w | 1;
+    } else {
+        this.x = arg1;
+        this.y = y;
+        this.z = z;
+        this.w = w;
     }
-    interpolate(){
-        if(!this.x_dependent){
-            if(this.dx == 0)
-                return [this.start]
+        this.add = function(v) { return new Vertex4(this.x + v.x, this.y + v.y, this.z + v.z); };
+        this.sub = function(v) { return new Vertex4(this.x - v.x, this.y - v.y, this.z - v.z, this.w - v.w); };
+        this.mul = function(n) { return new Vertex4(this.x*n, this.y*n, this.z*n, this.w); };
+        this.dot = function(vec) { return this.x*vec.x + this.y*vec.y + this.z*vec.z; };
+        this.cross = function(v2) { return new Vertex4(this.y*v2.z - this.z*v2.y, this.z*v2.x - this.x*v2.z, this.x*v2.y - this.y*v2.x); };
+        this.length = function() { return Math.sqrt(this.dot(this)); };
+}
 
-            var rez = []
-            const a = this.dy / this.dx
-            var y = this.start.y
-            for(let x = this.start.x; x < this.end.x; x++){
-                rez.push(new Point(x, y,this.color))
-                y += a
-            }
-            return rez
-        }
 
-        if(this.dy == 0)
-            return [this.start]
+function Mat4x4(data) {
+    return {data};
+}
 
-        var rez = []
-        const a = this.dx / this.dy
-        var x = this.start.x
-        for(let y = this.start.y; y < this.end.y; y++){
-            rez.push(new Point(x,y,this.color))
-            x += a
-        }
-        return rez
-        
-    }
+const I4 = new Mat4x4([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]);
 
-    draw(){
-        var points = this.interpolate()
-        for(let point of points)
-            point.draw()
-    }
+
+function Triangle(indexes, color, normals, texture, uvs) {
+    return {indexes, color, normals, texture, uvs}
+}
+
+function Model(vertices, triangles, bounds_center, bounds_radius) {
+    return {vertices, triangles, bounds_center, bounds_radius};
+}
+
+
+function Instance(model, position, orientation, scale) {
+    this.model = model;
+    this.position = position;
+    this.orientation = orientation || Identity4x4;
+    this.scale = scale || 1.0;
+    this.transform = matrix_times_matrix(make_translation_matrix(this.position), matrix_times_matrix(this.orientation, make_scaling_matrix(this.scale)));
+}
+
+
+function Camera(position, orientation) {
+    this.position = position;
+    this.orientation = orientation;
+    this.clipping_planes = [];
+}
+
+function Plane(normal, distance) {
+    return {normal, distance};
+}
+
+const LIGHT_AMBIENT = 0;
+const LIGHT_POINT = 1;
+const LIGHT_DIRECTIONAL = 2;
+
+function Light(type, intensity, vector) {
+    return {type, intensity, vector};
+}
+
+
+// A Texture.
+function Texture(url) {
+    this.image = new Image();
+    this.image.src = url;
+
+    let texture = this;
+
+    this.image.onload = function() {
+        texture.iw = texture.image.width;
+        texture.ih = texture.image.height;
+
+        texture.canvas = document.createElement("canvas");
+        texture.canvas.width = texture.iw;
+        texture.canvas.height = texture.ih;
+        let c2d = texture.canvas.getContext("2d");
+        c2d.drawImage(texture.image, 0, 0, texture.iw, texture.ih);
+        texture.pixel_data = c2d.getImageData(0, 0, texture.iw, texture.ih);
+    };
+
+    this.get_texel = function(u, v) {
+        let iu = (u*this.iw) | 0;
+        let iv = (v*this.ih) | 0;
+
+        let offset = (iv*this.iw*4 + iu*4);
+
+        return new Color(
+        this.pixel_data.data[offset + 0],
+        this.pixel_data.data[offset + 1],
+        this.pixel_data.data[offset + 2]
+        );
+    };
 }
