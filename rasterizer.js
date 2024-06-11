@@ -11,8 +11,8 @@ var background_color = [0, 0, 0];
 
 
 function put_pixel(x, y, color) {
-  x = canvas.width/2 + x;
-  y = canvas.height/2 - y - 1;
+  x = canvas.width/2 + (x | 0);
+  y = canvas.height/2 - (y | 0) - 1;
 
   if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
     return;
@@ -62,9 +62,11 @@ function update_buffer_if_closer(x, y, inv_z) {
 }
 
 function clear_all() {
-  canvas.width = canvas.width;
-  depth_buffer = Array();
-  depth_buffer.length = canvas.width * canvas.height;
+  canvas_context.clearRect(0, 0, canvas.width, canvas.height);
+  depth_buffer = new Array(canvas.width * canvas.height);
+  canvas_buffer = canvas_context.getImageData(0, 0, canvas.width, canvas.height);
 }
+
+
   
 

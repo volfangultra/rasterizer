@@ -49,7 +49,6 @@ function Mat4x4(data) {
 
 const I4 = new Mat4x4([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]);
 
-
 function Triangle(indexes, color, normals, texture, uvs) {
     return {indexes, color, normals, texture, uvs}
 }
@@ -62,7 +61,7 @@ function Model(vertices, triangles, bounds_center, bounds_radius) {
 function Instance(model, position, orientation, scale) {
     this.model = model;
     this.position = position;
-    this.orientation = orientation || Identity4x4;
+    this.orientation = orientation || I4;
     this.scale = scale || 1.0;
     this.transform = matrix_times_matrix(make_translation_matrix(this.position), matrix_times_matrix(this.orientation, make_scaling_matrix(this.scale)));
 }
@@ -104,6 +103,7 @@ function Texture(url) {
         let c2d = texture.canvas.getContext("2d");
         c2d.drawImage(texture.image, 0, 0, texture.iw, texture.ih);
         texture.pixel_data = c2d.getImageData(0, 0, texture.iw, texture.ih);
+        console.log("HELLO", texture.pixel_data)
     };
 
     this.get_texel = function(u, v) {

@@ -1,11 +1,3 @@
-const SM_FLAT = 0;
-const SM_GOURAUD = 1;
-const SM_PHONG = 2;
-  
-let SHADING_MODEL = SM_PHONG;
-let USE_VERTEX_NORMALS = true;
-let USE_PERSPECTIVE_CORRECT_DEPTH = true;
-
 function interpolate(i0, d0, i1, d1) {
     if (i0 == i1) {
       return [d0];
@@ -15,22 +7,21 @@ function interpolate(i0, d0, i1, d1) {
     let a = (d1 - d0) / (i1 - i0);
     let d = d0;
     for (let i = i0; i <= i1; i++) {
-      values.push(d);
-      d += a;
+        values.push(d);
+        d += a;
     }
   
     return values;
 }
   
-  
 function draw_line(p0, p1, color) {
     let dx = p1.x - p0.x, dy = p1.y - p0.y;
-
     if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) { let swap = p0; p0 = p1; p1 = swap; }
-
-        let ys = Interpolate(p0.x, p0.y, p1.x, p1.y);
+        
+        let ys = interpolate(p0.x, p0.y, p1.x, p1.y);
         for (let x = p0.x; x <= p1.x; x++) {
+           
             put_pixel(x, ys[(x - p0.x) | 0], color);
         }
     } else {
@@ -136,16 +127,14 @@ function edge_interpolate(y0, v0, y1, v1, y2, v2) {
   
 function render_triangle(triangle, vertices, projected, camera, lights, orientation) {
     // Compute triangle normal. Use the unsorted vertices, otherwise the winding of the points may change.
-    let normal = triangle.normals
-    if(normal == null || normal == undefined){
-        normal = compute_triangle_normal(vertices[triangle.indexes[0]], vertices[triangle.indexes[1]], vertices[triangle.indexes[2]]);
-        triangle.normals = [normal.x, normal.y, normal.z]
-    }
+    let normal = compute_triangle_normal(vertices[triangle.indexes[0]], vertices[triangle.indexes[1]], vertices[triangle.indexes[2]])
 
-    // Backface culling.
-    let vertex_to_camera = vertices[triangle.indexes[0]].mul(-1);
-    if (vertex_to_camera.dot(normal) <= 0) 
-        return;
+    // Backface culling
+    if(BACKFACE){
+        let vertex_to_camera = vertices[triangle.indexes[0]].mul(-1);
+        if (vertex_to_camera.dot(normal) <= 0) 
+            return;
+    }
     
 
     // Sort by projected point Y.
@@ -157,7 +146,11 @@ function render_triangle(triangle, vertices, projected, camera, lights, orientat
     let p0 = projected[triangle.indexes[i0]];
     let p1 = projected[triangle.indexes[i1]];
     let p2 = projected[triangle.indexes[i2]];
-
+    if(WIREFRAME){
+        draw_wireframe_triangle(p0,p1,p2, triangle.color)
+        return;
+    }
+    
     // Compute attribute values at the edges.
     var [x02, x012] = edge_interpolate(p0.y, p0.x, p1.y, p1.x, p2.y, p2.x);
     var [iz02, iz012] = edge_interpolate(p0.y, 1.0/v0.z, p1.y, 1.0/v1.z, p2.y, 1.0/v2.z);
@@ -234,7 +227,6 @@ function render_triangle(triangle, vertices, projected, camera, lights, orientat
         var [uz_left, uz_right] = [uz012, uz02];
         var [vz_left, vz_right] = [vz012, vz02];
     }
-
 
     // Draw horizontal segments.
     for (let y = p0.y; y <= p2.y; y++) {
@@ -367,8 +359,8 @@ function render_scene(camera, instances, lights) {
     for (let i = 0; i < instances.length; i++) {
         let transform = matrix_times_matrix(cameraMatrix, instances[i].transform);
         let clipped = transform_and_clip(camera.clipping_planes, instances[i].model, instances[i].scale, transform);
-        if (clipped != null) {
+        if (clipped != null) 
             render_model(clipped, camera, lights, instances[i].orientation);
-        }
+        
     }
 }

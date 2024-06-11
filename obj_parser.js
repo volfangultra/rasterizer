@@ -1,23 +1,3 @@
-document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);
-var OBJ = null
-
-function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) {
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const content = e.target.result;
-        const parser = new OBJParser();
-        parser.parse(content);
-        OBJ = parser;
-        console.log("HELO")
-        make_object();
-    };
-    reader.readAsText(file);
-}
 
 class OBJParser {
     constructor() {
